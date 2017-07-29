@@ -25,7 +25,7 @@ SECRET_KEY = '(fajc(g-9k1-f8=hs048ji232-swki_gp4-wev$rms&8(4cei^'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['vast-woodland-95410.herokuapp.com']
 
 
 # Application definition
