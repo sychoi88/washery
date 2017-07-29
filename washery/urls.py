@@ -15,7 +15,25 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
+from washeryapp import views
+from django.contrib.auth import views as auth_views
+
+from django.conf.urls.static import static
+from django.conf import settings
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-]
+    url(r'^$', views.home, name='home'),
+
+    url(r'^cleaner/sign-in/$', auth_views.login,
+        {'template_name': 'cleaner/sign_in.html'},
+        name = 'cleaner-sign-in'),
+    url(r'^cleaner/sign-out/$', auth_views.logout,
+        {'next_page': '/'},
+        name = 'cleaner-sign-out'),
+    url(r'^cleaner/sign-up/$', views.cleaner_sign_up,
+        name = 'cleaner-sign-up'),
+
+    url(r'^cleaner/$', views.cleaner_home, name = 'cleaner_home'),
+
+] + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
