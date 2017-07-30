@@ -12,6 +12,22 @@ def home(request):
 def cleaner_home(request):
     return render(request, 'cleaner/home.html', {})
 
+@login_required(login_url='/cleaner/sign-in/')
+def cleaner_account(request):
+    return render(request, 'cleaner/account.html', {})
+
+@login_required(login_url='/cleaner/sign-in/')
+def cleaner_item(request):
+    return render(request, 'cleaner/item.html', {})
+
+@login_required(login_url='/cleaner/sign-in/')
+def cleaner_invoice(request):
+    return render(request, 'cleaner/invoice.html', {})
+
+@login_required(login_url='/cleaner/sign-in/')
+def cleaner_report(request):
+    return render(request, 'cleaner/report.html', {})
+
 def cleaner_sign_up(request):
     user_form = UserForm()
     cleaner_form = CleanerForm()

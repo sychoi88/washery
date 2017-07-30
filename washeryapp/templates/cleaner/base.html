@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %} Cleaner {% endblock %}
+
+{% block sidebar %}
+  Cleaner, Hi {{ request.user }}
+  <hr/>
+
+  <a href="{% url 'cleaner-account' %}">Account</a>
+  -
+  <a href="{% url 'cleaner-item' %}">Item</a>
+  -
+  <a href="{% url 'cleaner-invoice' %}">Invoice</a>
+  -
+  <a href="{% url 'cleaner-report' %}">Report</a>
+
+{% endblock %}

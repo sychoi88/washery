@@ -36,6 +36,11 @@ urlpatterns = [
         name = 'cleaner-sign-up'),
     url(r'^cleaner/$', views.cleaner_home, name = 'cleaner_home'),
 
+    url(r'^cleaner/account/$', views.cleaner_account, name = 'cleaner-account'),
+    url(r'^cleaner/item/$', views.cleaner_item, name = 'cleaner-item'),
+    url(r'^cleaner/invoice/$', views.cleaner_invoice, name = 'cleaner-invoice'),
+    url(r'^cleaner/report/$', views.cleaner_report, name = 'cleaner-report'),
+
     # Sign In/ Sign Up/ Sign Out
     url(r'^api/social/', include('rest_framework_social_oauth2.urls')),
     # /convert-token (sign in/ sign up)
