@@ -1,17 +1,38 @@
 {% extends 'base.html' %}
-
+<!-- {% load static %} -->
 {% block title %} Cleaner {% endblock %}
 
 {% block sidebar %}
-  Cleaner, Hi {{ request.user }}
-  <hr/>
 
-  <a href="{% url 'cleaner-account' %}">Account</a>
-  -
-  <a href="{% url 'cleaner-item' %}">Item</a>
-  -
-  <a href="{% url 'cleaner-invoice' %}">Invoice</a>
-  -
-  <a href="{% url 'cleaner-report' %}">Report</a>
+  {% url 'cleaner-invoice' as cleaner_invoice_url %}
+  {% url 'cleaner-item' as cleaner_item_url %}
+  {% url 'cleaner-report' as cleaner_report_url %}
+  {% url 'cleaner-account' as cleaner_account_url %}
 
+<div class="text-center">
+  <img class="img-circle" src="{{ MEDIA_URL }}{{request.user.cleaner.logo }}" width="70" height="70" />
+  <br/>
+  <br/>
+  <h4>Hi, {{ request.user.get_full_name }}</h4>
+  <h5>{{ request.user.cleaner.name }}</h5>
+</div>
+
+<div class="list-group">
+  <span class="text-uppercase">Dashboard</span>
+
+  <a href="{% url 'cleaner-invoice' %}"
+    class="list-group-item {% if request.path == cleaner_invoice_url %} active {% endif %}">Invoice</a>
+  <a href="{% url 'cleaner-item' %}"
+    class="list-group-item {% if request.path == cleaner_item_url %} active {% endif %}">Items</a>
+  <a href="{% url 'cleaner-report' %}"
+    class="list-group-item {% if request.path == cleaner_report_url %} active {% endif %}">Report</a>
+
+  <span class="text-uppercase">Profile</span>
+  <a href="{% url 'cleaner-account' %}"
+    class="list-group-item {% if request.path == cleaner_account_url %} active {% endif %}">Account</a>
+</div>
+
+<div class="text-center">
+  <a href="{% url 'cleaner-sign-out' %}?next={{ request.path }}" class="btn btn-pink">Logout</a>
+</div>
 {% endblock %}

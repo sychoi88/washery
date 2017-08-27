@@ -1,5 +1,56 @@
 {% extends 'cleaner/base.html' %}
 
 {% block page %}
-  Cleaner Invoice
+
+<div class="panel">
+  <div class="panel-heading bg-blue">
+    <h4 class="panel-title text-center text-white">Invoices</h4>
+  </div>
+  <div class="panel-body">
+    <div class="text-right">
+      <a href="{%  url 'cleaner-add-invoice' %}" class="btn btn-pink">Add Invoice</a>
+      <br/>
+      <br/>
+    </div>
+
+    <table class="table table-bordered table-hover table-striped">
+      <thead>
+        <tr class="bg-gray text-white">
+          <th>Id</th>
+          <th>Invoice Details</th>
+          <th>Customer</th>
+          <!-- <th>Driver</th> -->
+          <th>Total</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for invoice in invoices %}
+          <tr>
+            <td scope="row">{{ invoice.id }}</td>
+            <td>
+              {% for detail in invoice.invoice_details.all %}
+
+                {{ detail.item.name }} ({{ detail.quantity }} x ${{  detail.item.price }}) = ${{ detail.sub_total }}<br/>
+              {% endfor %}
+            </td>
+            <td>{{ invoice.customer }}</td>
+            <td>{{ invoice.total }}</td>
+            <td>{{ invoice.get_status_display }}</td>
+            <td>
+              {% if invoice.status == 1 %}
+                <form method="POST">
+                  {% csrf_token %}
+                  <input name="id" value="{{invoice.id}}" hidden>
+                  <button class="btn btn-success">Ready</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

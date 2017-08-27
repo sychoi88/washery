@@ -1,4 +1,5 @@
 {% extends 'base_signup.html' %}
+{% load bootstrap3 %}
 
 {% block title %}Sign In{% endblock %}
 {% block heading %}Cleaner - Sign In{% endblock %}
@@ -6,8 +7,9 @@
 {% block content %}
   <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
-    {{ user_form }}
-    {{ cleaner_form }}
-    <button type="submit">Sign Up</button>
+    {% bootstrap_form user_form %}
+    {% bootstrap_form cleaner_form %}
+    <button type="submit" class="btn btn-pink">Sign Up</button>
   </form>
+  <a href="{% url 'cleaner-sign-in' %}">Already have an account?</a>
 {% endblock %}

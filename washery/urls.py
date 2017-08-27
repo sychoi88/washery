@@ -15,11 +15,11 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
-from washeryapp import views
 from django.contrib.auth import views as auth_views
-
 from django.conf.urls.static import static
 from django.conf import settings
+
+from washeryapp import views
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
@@ -37,9 +37,23 @@ urlpatterns = [
     url(r'^cleaner/$', views.cleaner_home, name = 'cleaner_home'),
 
     url(r'^cleaner/account/$', views.cleaner_account, name = 'cleaner-account'),
+
+    # ITEM
     url(r'^cleaner/item/$', views.cleaner_item, name = 'cleaner-item'),
+    url(r'^cleaner/item/add/$', views.cleaner_add_item, name = 'cleaner-add-item'),
+    url(r'^cleaner/item/edit/(?P<item_id>\d+)/$', views.cleaner_edit_item, name = 'cleaner-edit-item'),
+
+    # INVOICE
     url(r'^cleaner/invoice/$', views.cleaner_invoice, name = 'cleaner-invoice'),
+    url(r'^cleaner/invoice/add$', views.cleaner_add_invoice, name = 'cleaner-add-invoice'),
     url(r'^cleaner/report/$', views.cleaner_report, name = 'cleaner-report'),
+
+    # # Route
+    # url(r'^cleaner/route/$', views.cleaner_route, name = 'cleaner-route'),
+    # # Invoice
+    # url(r'^cleaner/invoice/$', views.cleaner_invoice, name = 'cleaner-invoice'),
+    # # Stop
+    # url(r'^cleaner/stop/$', views.cleaner_stop, name = 'cleaner-stop'),
 
     # Sign In/ Sign Up/ Sign Out
     url(r'^api/social/', include('rest_framework_social_oauth2.urls')),

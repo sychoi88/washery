@@ -1,0 +1,51 @@
+{% extends 'cleaner/base.html' %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{% block page %}
+  <div class="col-lg-offset-2 col-lg-8">
+    <div class="panel">
+      <div class="panel-heading bg-blue">
+        <h4 class="panel-title text-center text-white">
+          Add Invoice
+        </h4>
+      </div>
+      <div class="panel-body">
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+          {% bootstrap_formset_errors invoiceDetail_formset %}
+          {% bootstrap_form invoice_form %}
+          <!-- {% bootstrap_formset invoiceDetail_formset layout='horizontal' %} -->
+            {{ invoiceDetail_formset.management_form }}
+            {% for form in invoiceDetail_formset %}
+            <div class="inline {{ invoiceDetail_formset.prefix }}">
+              {% for field in form.visible_fields %}
+                <div class="row">
+                  <div class="col-md-3">{% bootstrap_label field.label %}</div>
+                  <div class="col-md-8">{% bootstrap_field field show_label=False %}</div>
+                </div>
+              {% endfor %}
+            </div>
+            {% endfor %}
+          <button type="submit" class="btn btn-pink">Create</button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block bottom_scripts %}
+<script src="{% static 'js/jquery.formset.js' %}"></script>
+<script type="text/javascript">
+		$(function() {
+				$(".inline.{{ invoiceDetail_formset.prefix }}").formset({
+						prefix: "{{ invoiceDetail_formset.prefix }}", // The form prefix for your django formset
+						addCssClass: "btn btn-block btn-primary bordered inline-form-add", // CSS class applied to the add link
+						deleteCssClass: "btn btn-block btn-primary bordered", // CSS class applied to the delete link
+						addText: 'Add another question', // Text for the add link
+						deleteText: 'Remove question above', // Text for the delete link
+						formCssClass: 'inline-form' // CSS class applied to each form in a formset
+				})
+		});
+</script>
+{% endblock %}

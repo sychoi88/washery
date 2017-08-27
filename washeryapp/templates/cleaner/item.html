@@ -1,5 +1,43 @@
 {% extends 'cleaner/base.html' %}
 
 {% block page %}
-  Cleaner Item
+  <div class="panel">
+    <div class="panel-heading bg-blue">
+      <h4 class="panel-title text-center text-white">Items</h4>
+    </div>
+    <div class="panel-body">
+      <div class="text-right">
+        <a href="{%  url 'cleaner-add-item' %}" class="btn btn-pink">Add Item</a>
+        <br/>
+        <br/>
+      </div>
+
+      <table class="table table-bordered table-hover table-striped">
+        <thead>
+          <tr class="bg-gray text-white">
+            <th>Id</th>
+            <th>Name</th>
+            <th>Short Description</th>
+            <th>Price</th>
+            <th>Piece Count</th>
+            <th class="text-center">Image</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+            <tr>
+              <td scope="row">{{ item.id }}</td>
+              <td><a href="{% url 'cleaner-edit-item' item.id %}">{{ item.name }}</a></td>
+              <td>{{ item.short_description }}</td>
+              <td>{{ item.price }}</td>
+              <td>{{ item.piece_count }}</td>
+              <td class="text-center"><img class="img-rounded"
+                src="{{ MEDIA_URL}}{{ item.image }}" width="50" height="50"></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 {% endblock %}
