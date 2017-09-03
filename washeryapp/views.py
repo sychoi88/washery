@@ -137,11 +137,6 @@ def cleaner_add_invoice(request):
 # @login_required(login_url='/cleaner/sign-in/')
 # def cleaner_route(request):
 #     return render(request, 'cleaner/route.html', {})
-#
-# # needs the route id.
-# @login_required(login_url='/cleaner/sign-in/')
-# def cleaner_stop(request):
-#     return render(request, 'cleaner/stop.html', {})
 
 
 

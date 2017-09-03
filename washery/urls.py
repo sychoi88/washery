@@ -19,7 +19,7 @@ from django.contrib.auth import views as auth_views
 from django.conf.urls.static import static
 from django.conf import settings
 
-from washeryapp import views
+from washeryapp import views, apis
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
@@ -37,8 +37,6 @@ urlpatterns = [
     url(r'^cleaner/$', views.cleaner_home, name = 'cleaner_home'),
 
     url(r'^cleaner/account/$', views.cleaner_account, name = 'cleaner-account'),
-
-    # ITEM
     url(r'^cleaner/item/$', views.cleaner_item, name = 'cleaner-item'),
     url(r'^cleaner/item/add/$', views.cleaner_add_item, name = 'cleaner-add-item'),
     url(r'^cleaner/item/edit/(?P<item_id>\d+)/$', views.cleaner_edit_item, name = 'cleaner-edit-item'),
@@ -48,17 +46,44 @@ urlpatterns = [
     url(r'^cleaner/invoice/add$', views.cleaner_add_invoice, name = 'cleaner-add-invoice'),
     url(r'^cleaner/report/$', views.cleaner_report, name = 'cleaner-report'),
 
+
     # # Route
     # url(r'^cleaner/route/$', views.cleaner_route, name = 'cleaner-route'),
     # # Invoice
     # url(r'^cleaner/invoice/$', views.cleaner_invoice, name = 'cleaner-invoice'),
-    # # Stop
-    # url(r'^cleaner/stop/$', views.cleaner_stop, name = 'cleaner-stop'),
 
     # Sign In/ Sign Up/ Sign Out
     url(r'^api/social/', include('rest_framework_social_oauth2.urls')),
     # /convert-token (sign in/ sign up)
     # /revoke-token (sign out)
+    url(r'^api/cleaner/invoice/notification/(?P<last_request_time>.+)/$',apis.cleaner_invoice_notification),
+
+    # APIs for CLEANERS
+    url(r'^api/cleaner/invoice/update/$', apis.cleaner_update_invoice),
+
+
+    # APIs for CUSTOMERS
+    url(r'^api/customer/cleaners/$', apis.customer_get_cleaners),
+    url(r'^api/customer/items/(?P<cleaner_id>\d+)/$', apis.customer_get_items),
+    url(r'^api/customer/invoice/add$', apis.customer_add_invoice),
+    url(r'^api/customer/invoice/request/$', apis.customer_request_invoice),
+
+    url(r'^api/customer/invoice/latest/$', apis.customer_get_latest_invoice),
+    url(r'^api/customer/driver/location/$', apis.customer_driver_location),
+
+    url(r'^api/customer/payment-method/update/$', apis.customer_payment_method_update),
+
+    # APIs for DRIVERS
+    url(r'^api/driver/invoices/ready/$', apis.driver_get_ready_invoices),
+    url(r'^api/driver/invoice/pick/$', apis.driver_pick_invoice),
+    url(r'^api/driver/invoice/latest/$', apis.driver_get_latest_invoice),
+    url(r'^api/driver/invoice/complete/$', apis.driver_complete_invoice),
+    url(r'^api/driver/revenue/$', apis.driver_get_revenue),
+    url(r'^api/driver/location/update/$', apis.driver_update_location),
+    # APIs for DRIVER ROUTES
+    url(r'^api/driver/route/latest/$', apis.driver_get_latest_route),
+    url(r'^api/driver/waypoint/complete/$', apis.driver_complete_waypoint),
+    url(r'^api/driver/route/start/$', apis.driver_start_route),
 
 
 ] + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

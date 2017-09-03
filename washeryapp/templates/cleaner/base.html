@@ -2,6 +2,27 @@
 <!-- {% load static %} -->
 {% block title %} Cleaner {% endblock %}
 
+{% block script %}
+  <script>
+    $(document).ready(function(){
+      var now = new Date();
+      setInterval(function(){
+        $.ajax({
+          url: '/api/cleaner/invoice/notification/' + now.toISOString() + '/',
+          method: 'GET',
+          success: function(data){
+            if(data['notification'] === 0) {
+              $('.badge').text('');
+            } else {
+              $('.badge').text(data['notification']);
+            }
+          }
+        })
+      }, 3000)
+    });
+  </script>
+{% endblock %}
+
 {% block sidebar %}
 
   {% url 'cleaner-invoice' as cleaner_invoice_url %}
@@ -21,7 +42,10 @@
   <span class="text-uppercase">Dashboard</span>
 
   <a href="{% url 'cleaner-invoice' %}"
-    class="list-group-item {% if request.path == cleaner_invoice_url %} active {% endif %}">Invoice</a>
+    class="list-group-item {% if request.path == cleaner_invoice_url %} active {% endif %}">
+    Invoice
+    <span class="badge"></span>
+  </a>
   <a href="{% url 'cleaner-item' %}"
     class="list-group-item {% if request.path == cleaner_item_url %} active {% endif %}">Items</a>
   <a href="{% url 'cleaner-report' %}"
