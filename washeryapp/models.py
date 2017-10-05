@@ -8,6 +8,8 @@ class Cleaner(models.Model):
     name = models.CharField(max_length = 500)
     phone = models.CharField(max_length = 500)
     address = models.CharField(max_length = 500)
+    latitude = models.DecimalField(max_digits=9, decimal_places = 6)
+    longitude = models.DecimalField(max_digits=9, decimal_places = 6)
     logo = models.ImageField(upload_to='cleaner_logo/', blank=False)
 
     def __str__(self):
@@ -45,6 +47,8 @@ class Item(models.Model):
 
 class Route(models.Model):
     driver = models.ForeignKey(Driver)
+    cleaner = models.ForeignKey(Cleaner)
+
     created_at = models.DateTimeField(default = timezone.now)
     started_at = models.DateTimeField(blank = True, null = True)
     completed_at = models.DateTimeField(blank = True, null = True)
@@ -87,6 +91,7 @@ class Invoice(models.Model):
     status = models.IntegerField(choices = STATUS_CHOICES)
     ready_by = models.DateTimeField(default = timezone.now)
     created_at = models.DateTimeField(default = timezone.now)
+    paid_on = models.DateTimeField(blank = True, null = True)
 
     pickup_date = models.DateTimeField()
     pickup_period = models.IntegerField(choices = PERIOD_CHOICES)
@@ -115,11 +120,14 @@ class WayPoint(models.Model):
         (DROPOFF, "Drop off")
     )
 
-    route = models.ForeignKey(Route, related_name = 'waypoints')
+    cleaner = models.ForeignKey(Cleaner)
+    route = models.ForeignKey(Route, related_name = 'waypoints', blank=True, null=True)
     invoice = models.ForeignKey(Invoice)    # nullable, used for drop-offs.
     waypoint_type = models.IntegerField(choices = TYPE_CHOICES)
-
+    waypoint_order = models.IntegerField(default = 0)
     address = models.CharField(max_length=500)  # snapped from customer/invoice.
+    latitude = models.DecimalField(max_digits=9, decimal_places = 6)
+    longitude = models.DecimalField(max_digits=9, decimal_places = 6)
     completed_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):

@@ -43,12 +43,18 @@ urlpatterns = [
 
     # INVOICE
     url(r'^cleaner/invoice/$', views.cleaner_invoice, name = 'cleaner-invoice'),
-    url(r'^cleaner/invoice/add$', views.cleaner_add_invoice, name = 'cleaner-add-invoice'),
+    url(r'^cleaner/invoice/add/$', views.cleaner_add_invoice, name = 'cleaner-add-invoice'),
+    url(r'^cleaner/invoice/edit/(?P<invoice_id>\d+)/$', views.cleaner_edit_invoice, name = 'cleaner-edit-invoice'),
     url(r'^cleaner/report/$', views.cleaner_report, name = 'cleaner-report'),
 
 
     # # Route
-    # url(r'^cleaner/route/$', views.cleaner_route, name = 'cleaner-route'),
+    url(r'^cleaner/route/$', views.cleaner_route, name = 'cleaner-route'),
+    # url(r'^cleaner/route/add/$', views.cleaner_add_route, name='cleaner-add-route'),    # view to add route
+    url(r'^cleaner/route/edit/$', views.cleaner_edit_route, name='cleaner-edit-route'),    # view to add route
+    url(r'^cleaner/route/edit/(?P<route_id>\d+)/$', views.cleaner_edit_route, name='cleaner-edit-route'),    # view to add route
+
+
     # # Invoice
     # url(r'^cleaner/invoice/$', views.cleaner_invoice, name = 'cleaner-invoice'),
 
@@ -57,10 +63,14 @@ urlpatterns = [
     # /convert-token (sign in/ sign up)
     # /revoke-token (sign out)
     url(r'^api/cleaner/invoice/notification/(?P<last_request_time>.+)/$',apis.cleaner_invoice_notification),
+    url(r'^api/cleaner/items/$',apis.cleaner_get_items),
 
     # APIs for CLEANERS
-    url(r'^api/cleaner/invoice/update/$', apis.cleaner_update_invoice),
+    url(r'^api/cleaner/invoice/update-new/$', apis.cleaner_update_invoice_new), # this is used by web. validates csrf.
+    url(r'^api/cleaner/invoice/update/$', apis.cleaner_update_invoice), #this ignores csrf. dont think this is being used.
 
+    url(r'^api/cleaner/routeToEdit/(?P<route_id>\d+)/$', apis.cleaner_routeToEdit), # GET ROUTE WITH OPTIONS
+    url(r'^api/cleaner/route/update/$', apis.cleaner_update_route), # POST TO UPDATE ROUTE
 
     # APIs for CUSTOMERS
     url(r'^api/customer/cleaners/$', apis.customer_get_cleaners),
@@ -72,6 +82,7 @@ urlpatterns = [
     url(r'^api/customer/driver/location/$', apis.customer_driver_location),
 
     url(r'^api/customer/payment-method/update/$', apis.customer_payment_method_update),
+    url(r'^api/customer/invoice/update-payment/$', apis.customer_update_payment),
 
     # APIs for DRIVERS
     url(r'^api/driver/invoices/ready/$', apis.driver_get_ready_invoices),

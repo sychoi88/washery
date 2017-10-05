@@ -6,7 +6,7 @@ from washeryapp.forms import (UserForm, CleanerForm, UserFormForEdit, ItemForm, 
 from django.contrib.auth import authenticate, login
 
 from django.contrib.auth.models import User
-from washeryapp.models import Item, Invoice, InvoiceDetail
+from washeryapp.models import Item, Invoice, InvoiceDetail, Route
 
 from django.forms import inlineformset_factory, modelformset_factory
 
@@ -90,6 +90,12 @@ def cleaner_invoice(request):
 
 
 @login_required(login_url='/cleaner/sign-in/')
+def cleaner_edit_invoice(request, invoice_id):
+
+    return render(request, 'cleaner/edit_invoice.html', {"invoice_id": invoice_id})
+
+
+@login_required(login_url='/cleaner/sign-in/')
 def cleaner_add_invoice(request):
     invoice_form = CreateInvoiceForm(prefix="invoice")
 
@@ -134,11 +140,15 @@ def cleaner_add_invoice(request):
         "invoiceDetail_formset": invoiceDetail_formset,
     })
 
-# @login_required(login_url='/cleaner/sign-in/')
-# def cleaner_route(request):
-#     return render(request, 'cleaner/route.html', {})
+@login_required(login_url='/cleaner/sign-in/')
+def cleaner_route(request):
 
+    routes = Route.objects.filter(cleaner = request.user.cleaner, completed_at__isnull = True).order_by("-id")
+    return render(request, 'cleaner/route.html', {"routes": routes})
 
+@login_required(login_url='/cleaner/sign-in/')
+def cleaner_edit_route(request, route_id=0):
+    return render(request, 'cleaner/edit_route.html', {"route_id": route_id})
 
 @login_required(login_url='/cleaner/sign-in/')
 def cleaner_report(request):

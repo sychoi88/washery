@@ -2,6 +2,7 @@
 {% load staticfiles %}
 {% load bootstrap3 %}
 
+
 {% block page %}
 <style>
   .text-info{border-left-style:solid; border-left-width:5px; border-left-color:blue; padding:5px 5px 5px 10px; font-size:110%;}
@@ -26,10 +27,11 @@
                   <div class="row">
                       <div class="col-md-4"><span class="panel-title">Invoice Summary</span></div>
                       <div class="col-md-4"><span>Today is: 9/16/2017</span></div>
-                      <div class="col-md-3 col-md-push-1"><span>Total Invoices - </span><span id="notification" class="badge">3</span></div>
+                      <!-- <div class="col-md-3 col-md-push-1"><span>Total Invoices - </span><span id="notification" class="badge">3</span></div> -->
+                      <div class="col-md-3 col-md-push-1"><span class="panel-title">Invoice Id: {{invoice_id}}</span></div>
                   </div>
               </div>
-              <div id = "InvoiceSection" class="panel-body" style="max-height:320px; overflow:auto;">
+              <div id="InvoiceSection" class="panel-body" style="max-height:320px; overflow:auto;">
                   <div id="emptyInvoiceMsg" class='text-warning'>Nothing ordered yet!</div>
                   <ul id="InvoiceMenu" class="list-group">
                     <!-- INOVICE ITEMS GO HERE -->
@@ -37,13 +39,12 @@
               </div>
               <div class="panel-footer" >
                   <h3><span id="InvoiceTotal" class="label label-primary">Total: $0.00</span></h3>
-                  <h3><span id="InvoicePieces" class="label label-primary">60 Pieces</span></h3>
+                  <h3><span id="InvoicePieces" class="label label-primary">Total Pieces: 0</span></h3>
               </div>
               <div class="panel-footer" >
                   <div>
                       <span class="btn btn-default btn-marginTop" onClick="ClearInvoice();">Clear</span>
-                      <span class="btn btn-danger btn-marginTop">Checkout</span>
-                      <span class="btn btn-danger btn-marginTop" onClick="SaveInvoice();">Save Ajax</span>
+                      <button class="btn btn-danger btn-marginTop" id="saveBtn" onClick="SaveInvoice();">Save</button>
                   </div>
               </div>
           </div>
@@ -51,7 +52,7 @@
 
       <div class="col-md-6">
           <div class="panel panel-primary">
-              <div class="panel-body">
+              <divf class="panel-body">
                   <ul id="myTab" class="nav nav-tabs" role="tablist">
                       <li role="presentation" class="active"><a href="#posItem" role="tab" data-toggle="tab">Item</a></li>
                       <li role="presentation"><a href="#food" role="tab" data-toggle="tab">Food</a></li>
@@ -68,25 +69,39 @@
                       </div>
                       <div role="tabpanel" class="tab-pane" id="new">
                           <br />
-                          <form class="form" name="formCreate" novalidate>
+                          <form class="form" id="formCreate" data-toggle="validator">
                               <div class="col-md-4">
-                                  <label>Name*</label>
-                                  <input type="text" class="form-control"  required />
+                                <div class="form-group">
+                                  <label for="inputName" class="control-label">Name*</label>
+                                  <input type="text" id="inputName" class="form-control" required>
+                                </div>
                               </div>
+
                               <div class="col-md-3">
-                                  <label>Price*</label>
-                                  <input type="number" class="form-control" required />
+                                <div class="form-group">
+                                  <label for="inputPrice" class="control-label">Price*</label>
+                                  <input type="number" id="inputPrice" class="form-control" required>
+                                </div>
                               </div>
+
                               <div class="col-md-3">
+                                <div class="form-group">
+                                  <label for="inputPiece" class="control-label">Piece*</label>
+                                  <input type="number" id="inputPiece" class="form-control" required>
+                                </div>
+                              </div>
+                              <!-- <div class="col-md-3">
                                   <label>Category*</label>
                                   <select class="form-control" required>
                                       <option>Drinks</option>
                                       <option>Foods</option>
                                   </select>
-                              </div>
+                              </div> -->
                               <div class="col-md-1">
                                   <br />
-                                  <!-- <button class="btn btn-default btn-marginTop" data-ng-click="addNewItem(new)" data-ng-disabled="formCreate.$invalid">Add</button> -->
+                                  <!-- <button class="btn btn-default btn-marginTop" onClick="addNewItem();">Add</button> -->
+                                  <button class="btn btn-default btn-marginTop" type="submit">Add</button>
+
                               </div>
                           </form>
                       </div>
@@ -102,18 +117,34 @@
 {% endblock %}
 
 {% block bottom_scripts %}
+<script src="{% static 'js/validator.min.js' %}"></script>
+
 <script type="text/javascript">
 
     $(document).ready(function () {
+
         $("#myTab a").click(function (e) {
             e.preventDefault();
             $(this).tab('show');
         });
+
+        $('#formCreate').validator().on('submit', function(e) {
+          if(e.isDefaultPrevented()){
+            // handle the invalid form...
+          } else {
+            // everything looks good!
+            //add to invoice and item list.
+            // update invoiceMenu and display first tab.
+            console.log('not implemented: add item to invoice and item list.')
+          }
+          event.preventDefault();
+        })
     });
 
 
+
     var invoice = {
-      invoice_id: 0,
+      invoice_id: {{invoice_id}},
       total: 0.00,
       pieces: 0,
       lineItems: [],
@@ -235,7 +266,6 @@
     function initInvoice() {
       // get from python.  load invoice info from server here.
       console.log('initInvoice() not implemented');
-      invoice.invoice_id = 99;
     }
 
     function addToOrder(itemId, quantity) {
@@ -284,9 +314,11 @@
       var emptyMsg = $('#emptyInvoiceMsg');
       if(invoice.lineItems.length == 0) {
         emptyMsg.show();
+        $('#saveBtn').prop('disabled', true);
       }
       else {
         emptyMsg.hide();
+        $('#saveBtn').prop('disabled',false);
       }
 
       var invoiceMenu = $("#InvoiceMenu");
@@ -329,7 +361,7 @@
       });
 
       $('#InvoiceTotal').text('Total: USD $ ' + invoice.total.toFixed(2));
-      $('#InvoicePieces').text(invoice.pieces + ' Pieces');
+      $('#InvoicePieces').text('Pieces: ' + invoice.pieces);
     }
 
     function updateItemMenuUI() {

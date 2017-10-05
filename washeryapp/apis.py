@@ -6,9 +6,13 @@ from django.http import JsonResponse
 from oauth2_provider.models import AccessToken
 from django.views.decorators.csrf import csrf_exempt
 
-from washeryapp.models import Cleaner, Item, Invoice, InvoiceDetail, Route, WayPoint
-from washeryapp.serializers import CleanerSerializer, ItemSerializer, InvoiceSerializer, RouteSerializer
+from washeryapp.models import Cleaner, Item, Invoice, InvoiceDetail, Route, WayPoint, Driver
+from washeryapp.serializers import CleanerSerializer, ItemSerializer, InvoiceSerializer, RouteSerializer, WayPointSerializer, RouteDriverSerializer
 
+import stripe
+from washery.settings import STRIPE_API_KEY
+
+stripe.api_key = STRIPE_API_KEY
 
 ############
 # CUSTOMERS
@@ -83,9 +87,61 @@ def customer_request_invoice(request):
             dropoff_period = request.POST["dropoff_period"],
         )
 
+        # CREATE WAYPOINT HERE AS WELL HERE!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         return JsonResponse({"status": "success"})
 
 # POST - Update invoice with details.
+def cleaner_update_invoice_new(request):
+
+    if request.method == "POST":
+
+        jsonInvoice = json.loads(request.POST.get('invoice'))
+
+        invoice = Invoice.objects.get(cleaner=request.user.cleaner, id = jsonInvoice["invoice_id"])
+
+        if not invoice.status == Invoice.PICKEDUP:
+            return JsonResponse({"status": "failed", "error": "Invoice cannot be updated."})
+
+        # Get Invoice Details
+        invoice_details = json.loads(jsonInvoice["invoice_details"])
+
+        invoice_total = 0
+        invoice_pieces = 0
+        for item in invoice_details:
+            invoice_total += Item.objects.get(id=item["item_id"]).price * item["quantity"]
+            invoice_pieces += Item.objects.get(id=item["item_id"]).piece_count * item["quantity"]
+
+        if len(invoice_details) > 0:
+            # Step 1 - Update Invoice (status, total, pieces)
+            invoice.status = Invoice.CLEANING
+            invoice.total = invoice_total
+            invoice.pieces = invoice_pieces
+
+            # Step 2 - Create Invoice Details
+            for item in invoice_details:
+                InvoiceDetail.objects.create(
+                    invoice = invoice,
+                    item_id = item["item_id"],
+                    quantity = item["quantity"],
+                    sub_total = Item.objects.get(id=item["item_id"]).price * item["quantity"],
+                    piece_count = Item.objects.get(id=item["item_id"]).piece_count * item["quantity"],
+                )
+            invoice.save()
+
+            return JsonResponse({"status": "success"})
+        #
+        # print("CHECK THIS OUT:##################################")
+        # print(invoice['invoice_id'])
+        # print("AND THIS OUT:##################################")
+        # for detail in invoice['invoice_details']:
+        #     print("item_id: " + str(detail['item_id']) +", quantity: " + str(detail['quantity']))
+
+        return JsonResponse({"status": "success"})
+
+    return JsonResponse({"status": "fail"})
+
+
 @csrf_exempt
 def cleaner_update_invoice(request):
     """
@@ -205,6 +261,50 @@ def customer_add_invoice(request):
 
             return JsonResponse({"status": "success"})
 
+@csrf_exempt
+# POST update invoice with stripe charge.
+def customer_update_payment(request):
+    """
+        params:
+            access_token
+            invoice_id
+            stripe_token
+        return:
+            {"status": "success"}
+    """
+    access_token = AccessToken.objects.get(token = request.POST.get("access_token"),
+        expires__gt = timezone.now())
+
+    customer = access_token.user.customer
+    invoice = Invoice.objects.get(
+        customer = customer,
+        id=request.POST["invoice_id"],
+    )
+
+    if invoice == None:
+        return JsonResponse({"status": "failed", "error": "Invoice not found."})
+
+    # if not invoice.paid_on == None:
+    #     return JsonResponse({"status": "failed", "error": "Invoice is already paid."})
+
+    # Get Stripe token.
+    stripe_token = request.POST["stripe_token"]
+
+    # Step 1: Create a charge: this will charge customer's card
+    charge = stripe.Charge.create(
+        amount = invoice.total*100, # Amount in cents.
+        currency = "usd",
+        source = stripe_token,
+        description = "Washery Invoice",
+    )
+
+    if charge.status != "failed":
+        invoice.paid_on = timezone.now()
+        invoice.save()
+        return JsonResponse({"status": "success"})
+    else:
+        return JsonResponse({"status": "failed", "error": "Failed connect to Stripe."})
+
 def customer_get_latest_invoice(request):
     access_token = AccessToken.objects.get(token = request.GET.get("access_token"),
         expires__gt = timezone.now())
@@ -257,6 +357,89 @@ def cleaner_invoice_notification(request, last_request_time):
 
     return JsonResponse({"notification": notification})
 
+def cleaner_get_items(request):
+    pos_items = ItemSerializer(
+        Item.objects.filter(cleaner=request.user.cleaner).order_by("-id"),
+        many=True,
+        context = {"request": request}
+    ).data
+
+    return JsonResponse({"pos_items": pos_items})
+
+def cleaner_update_route(request):
+    if request.method == "POST":
+
+        jsonRoute = json.loads(request.POST.get('route'))
+        if len(jsonRoute["waypoints"]) < 1:
+            return JsonResponse({"status":"fail", "error": "waypoints is empty."})
+
+        print("aasdfasdfasdfasdf: " + str(jsonRoute))
+
+        try:
+            print('updating existing')
+            route = Route.objects.get(cleaner=request.user.cleaner, id = jsonRoute["route_id"])
+
+            # unlink waypoint from route.
+            for wp in route.waypoints.all():
+                wp.route = None
+                wp.waypoint_order = 0
+                wp.save()
+
+        except Route.DoesNotExist:
+            print("creating new.")
+            print("cleanerId" + str(request.user.cleaner.id))
+            route = Route.objects.create(
+                cleaner_id = request.user.cleaner.id,
+                driver_id = jsonRoute["driver_id"]
+            )
+
+        # Get Waypoints
+        waypoints = jsonRoute["waypoints"]
+
+        # connect waypoint to route.
+        for item in waypoints:
+            waypoint = WayPoint.objects.get(cleaner = request.user.cleaner, id = item["id"])
+            waypoint.route = route
+            waypoint.waypoint_order = item["wp_order"]
+            waypoint.save()
+
+        return JsonResponse({"status": "success"})
+
+    return JsonResponse({"status": "fail", "error": "message here."})
+
+def cleaner_routeToEdit(request, route_id=0):
+
+    print(route_id)
+    print("++++++++++++++++++++++++++++++++++++")
+    cleaner = CleanerSerializer(
+            request.user.cleaner,
+            context = {"request": request}
+
+        ).data
+
+    try:
+        routeObj = Route.objects.get(cleaner = request.user.cleaner, id = route_id)
+        route = RouteSerializer(
+            routeObj
+        ).data
+
+    except Route.DoesNotExist:
+        route = None
+
+    unRouted =None
+
+    unRouted = WayPointSerializer(
+        WayPoint.objects.filter(cleaner = request.user.cleaner, route_id__isnull = True),
+        many = True,
+        context={"request": request}
+    ).data
+    drivers = RouteDriverSerializer(
+        Driver.objects,
+        many=True,
+        context={"request": request}
+    ).data
+
+    return JsonResponse({"cleaner": cleaner, "route": route, "unrouted": unRouted, "drivers": drivers})
 
 ############
 # DRIVERS

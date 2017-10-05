@@ -12,9 +12,9 @@
           method: 'GET',
           success: function(data){
             if(data['notification'] === 0) {
-              $('.badge').text('');
+              $('#notification.badge').text('');
             } else {
-              $('.badge').text(data['notification']);
+              $('#notification.badge').text(data['notification']);
             }
           }
         })
@@ -26,6 +26,7 @@
 {% block sidebar %}
 
   {% url 'cleaner-invoice' as cleaner_invoice_url %}
+  {% url 'cleaner-route' as cleaner_route_url %}
   {% url 'cleaner-item' as cleaner_item_url %}
   {% url 'cleaner-report' as cleaner_report_url %}
   {% url 'cleaner-account' as cleaner_account_url %}
@@ -46,6 +47,8 @@
     Invoice
     <span class="badge"></span>
   </a>
+  <a href="{% url 'cleaner-route' %}"
+    class="list-group-item {% if request.path == cleaner_route_url %} active {% endif %}">Route</a>
   <a href="{% url 'cleaner-item' %}"
     class="list-group-item {% if request.path == cleaner_item_url %} active {% endif %}">Items</a>
   <a href="{% url 'cleaner-report' %}"

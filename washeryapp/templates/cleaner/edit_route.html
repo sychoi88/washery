@@ -1,0 +1,714 @@
+{% extends 'cleaner/base.html' %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{% block page %}
+<style type="text/css">
+  body{
+    padding-top:0;
+    overflow: hidden;
+  }
+
+    #map {
+      width: 100%;
+      height: 100vh;
+    }
+	#routeMenu {
+	  position:relative;
+    right:0;
+    height:100vh;
+	  background-color: #E4E7E9;
+    min-height:100%;
+    max-height:100%;
+    -webkit-overflow-scrolling: touch;
+	}
+  .route-header {
+
+  }
+  #sortable {
+    list-style-type: none;
+    padding-left: 0px;
+  }
+  #sortable:before{
+    content:"";
+    position: absolute;
+    height:: 100%;
+    width: 5px;
+    border-left: 2px dotted red;
+  }
+  /*#sortable li.placeholder {
+    border: 1px solid #c5c5c5;
+    background-color: aqua;
+  }*/
+
+  #sortable li {
+    font-size: 22px;
+    /*border: 1px solid #c5c5c5;*/
+    margin-top: 10px;
+    margin-bottom: 20px;
+    padding-bottom:5px;
+    padding-bottom:5px;
+  }
+  .ui-state-hover {
+    border: 1px solid #bbbbbb;
+    /*background: #e2e2e2;*/
+    background: #b6b8ba;
+    color: #575757;
+  }
+  .ui-state-default {
+    border: 1px solid #c5c5c5;
+    background: #E4E7E9;
+    color: #454545;
+  }
+
+  .ui-state-highlight {
+    border: 1px solid #dad55e;
+    background: #fffa90;
+    color: #777620;
+  }
+  #routeInfo{
+    margin-top:15x;
+    height: 100px;
+    background-color: white;
+  }
+  #stopInfo{
+    padding-top:10px;
+    text-align:center;
+  }
+  #stopLabel{
+    font-size:30px;
+  }
+  #stopLiteral{
+    font-size: 12px;
+  }
+  #distanceInfo{
+    padding-top:20px;
+    /*padding-right:30px;*/
+    text-align:right;
+  }
+  #minuteLabel{
+    font-size:15px;
+    color:#5A9D00;
+  }
+  #mileLabel{
+    font-size:13px;
+    color:rgba(0,0,0,0.54);
+    margin-top:4px;
+  }
+
+  .waypoint-info {
+    display: flex;
+    align-items: center;
+    align-content: center;
+  }
+  .waypoint-number {
+    position: relative;
+    width: 50px;
+    text-align: center;
+  }
+  .waypoint-details {
+    flex: 1 1 auto;
+    margin: 0 10px;
+    width: 0;
+  }
+  .name {
+    max-height: 36px;
+    overflow: hidden;
+    margin: 0;
+    font-size: 15px;
+    font-weight: bold;
+  }
+  .address {
+    margin: 0;
+    font-size: 12px;;
+  }
+  .route-footer {
+
+    position: absolute;
+    bottom:0;
+    height:50px;
+    right: 0;
+    left: 0;
+    margin: 0 15px;
+    margin-bottom: 15px;
+    padding-top:15px;
+    border-top: solid 1px;
+
+  }
+  .waypoint-section {
+
+  }
+  .scrollable{
+    cursor: default;
+    overflow-x:hidden;
+    overflow-y:auto;
+    position:relative;
+    height: calc(100vh - 350px);
+  }
+  #loading {
+    height:100vh;
+    width:100%;
+    position:absolute;
+    z-index:9999;
+    margin-left: -40px;
+    background-color: rgba(0,0,0,0.5);
+  }
+  #loading span{
+    top:45%;
+    left:45%;
+    font-size: 100px;
+    color: #E2E2E2;
+    text-align:center;
+  }
+  .spin{
+    -webkit-animation: spin 2000ms infinite linear;
+    animation: spin 2000ms infinite linear;
+  }
+  @keyframes spin {
+    0%{
+      -webkit-transform: rotate(0deg);
+      transform:rotate(0deg);
+    }
+    100% {
+      -webkit-transform: rotate(359deg);
+      transform:rotate(359deg);
+    }
+  }
+  </style>
+<div id="loading" style="display:none;">
+  <span class="glyphicon glyphicon-refresh spin"></span>
+</div>
+<div class="row" style="margin:0 -30px;">
+
+  <!-- <div class="container-fluid">
+    <div class="row content"> -->
+
+      <div class="col-xs-9">
+    	  <div class="row">
+            <div id="map"></div>
+    		</div>
+      </div>
+      <div class="col-xs-3 sidenav" id="routeMenu">
+        <div class="menu">
+          <div class="route-header">
+            <h4 class="text-center">Create A Route</h4>
+            <button type="button" class="btn btn-success btn-block" onClick="DrawMap();">
+              <i class="glyphicon glyphicon-refresh"></i> Draw Route
+            </button>
+
+            <div id="routeInfo" class="col-xs-12" style="display:none;">
+              <div class="row">
+                <div class="col-xs-4 col-xs-offset-1" style="border-right: 2px solid #CCC">
+                    <div id="stopInfo">
+                      <div id="stopLabel"><strong>5</strong></div>
+                      <div id="stopLiteral">STOPS</div>
+                    </div>
+                </div>
+                <div class="col-xs-5">
+                  <div id="distanceInfo">
+                    <div id="minuteLabel">1 hr 20 min</div>
+                    <div id="mileLabel">130 miles</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <hr/>
+            <!-- <h3 class="text-center">Route</h4> -->
+            <div class="form-group">
+              <label for="driver">Select driver:</label>
+              <select class="selectpicker form-control" id="driverSelect">
+                <!-- <option>Simon Choi</option>
+                <option>Shana Fujii</option>
+                <option disabled>John Yu</option> -->
+              </select>
+            </div>
+          </div>
+          <div class="waypoint-section">
+              <div class="form-group">
+                <label for="driver">Waypoints:</label>
+                <div>
+                <div class="scrollable">
+                    <ul id="sortable">
+                      <!-- <li class="ui-state-default">asdf</li>
+                      <li class="ui-state-hover">asdf</li>
+                      <li class="ui-state-highlight">asdfasdf</li> -->
+                    <!-- <li>
+                      <div class="waypoint-info">
+                        <div class="waypoint-number">0</div>
+                        <div class="waypoint-details">
+                          <p class="name">Paul Kim</p>
+                          <p class="address">906 W Hudson Way Gilbert, AZ 85233</p>
+                        </div>
+                      </div>
+                    </li>
+
+                    <li>
+                      <div class="waypoint-info">
+                        <div class="waypoint-number">0</div>
+                        <div class="waypoint-details">
+                          <p class="name">Paul Kim</p>
+                          <p class="address">906 W Hudson Way Gilbert, AZ 85233</p>
+                        </div>
+                      </div>
+                    </li>
+
+                    <li>
+                      <div class="waypoint-info">
+                        <div class="waypoint-number">0</div>
+                        <div class="waypoint-details">
+                          <p class="name">Paul Kim</p>
+                          <p class="address">906 W Hudson Way Gilbert, AZ 85233</p>
+                        </div>
+                      </div>
+                    </li>
+
+                    <li>
+                      <div class="waypoint-info">
+                        <div class="waypoint-number">0</div>
+                        <div class="waypoint-details">
+                          <p class="name">Paul Kim</p>
+                          <p class="address">906 W Hudson Way Gilbert, AZ 85233</p>
+                        </div>
+                      </div>
+                    </li>
+
+                    <li>
+                      <div class="waypoint-info">
+                        <div class="waypoint-number">0</div>
+                        <div class="waypoint-details">
+                          <p class="name">Paul Kim</p>
+                          <p class="address">906 W Hudson Way Gilbert, AZ 85233</p>
+                        </div>
+                      </div>
+                    </li>
+
+                    <li>
+                      <div class="waypoint-info">
+                        <div class="waypoint-number">0</div>
+                        <div class="waypoint-details">
+                          <p class="name">Paul Kim</p>
+                          <p class="address">906 W Hudson Way Gilbert, AZ 85233</p>
+                        </div>
+                      </div>
+                    </li>
+
+                    <li>
+                      <div class="waypoint-info">
+                        <div class="waypoint-number">0</div>
+                        <div class="waypoint-details">
+                          <p class="name">Paul Kim</p>
+                          <p class="address">906 W Hudson Way Gilbert, AZ 85233</p>
+                        </div>
+                      </div>
+                    </li> -->
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="route-footer">
+          <div>
+            <div class="form-group">
+              <button type="button" class="btn btn-success btn-block" onClick="CreateRoute();">
+               <i class="glyphicon glyphicon-ok"></i> Create Route!
+             </button>
+            </div>
+          </div>
+        </div>
+        </div>
+      <!-- </div>
+  </div> -->
+</div>
+
+{% endblock %}
+
+{% block bottom_scripts %}
+<script
+  src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"
+  integrity="sha256-eGE6blurk5sHj+rmkfsGYeKyZx3M4bG+ZlFyA7Kns7E="
+  crossorigin="anonymous"></script>
+
+<script src="http://maps.google.com/maps/api/js?key=AIzaSyAkEGcJaE64WkOEeuxUGltJuHQeQF-sf24"></script>
+<script src="{% static 'plugins/gmaps/gmaps.min.js' %}"></script>
+
+<script>
+  function findWithAttr(array, attr, value) {
+    for(var i = 0; i < array.length; i += 1) {
+        if(array[i][attr] === value) {
+            return i;
+        }
+    }
+    return -1;
+  }
+
+
+  function RouteManager(routed, unRouted, baseLat, baseLng){
+    this.routed = routed;
+    this.unRouted = unRouted;
+    this.baseLat = baseLat;
+    this.baseLng = baseLng;
+  }
+  RouteManager.prototype = {
+    constructor: RouteManager,
+    UnRouteWaypoint: function (id) {
+      console.log("un-routing wp_id: " + id);
+      var index = findWithAttr(this.routed, "id", id);
+      if(index == -1){
+        console.log("not found in routed, wp_id: " + id);
+      }
+      var waypoint = this.routed.splice(index, 1)[0];  // remove from routed.
+      waypoint.is_routed = false;
+      this.unRouted.push(waypoint);  // add to unRouted.
+      LoadMap();
+    },
+    RouteWaypoint: function(id) {
+      console.log("routing wp_id: " + id);
+      var index = findWithAttr(this.unRouted, "id", id);
+      if(index == -1){
+        console.log("not found in unRouted, wp_id: " + id);
+      }
+      var waypoint = this.unRouted.splice(index, 1)[0];  // remove from unRouted.
+      waypoint.is_routed = true;
+      this.routed.push(waypoint);  // add to routed.
+      LoadMap();
+    },
+    MoveWaypoint: function(oldIndex, newIndex) {
+      var oldIndexOffset = oldIndex < newIndex ? 0 : 1;
+      var newIndexOffset = oldIndex < newIndex ? 1 : 0;
+      this.routed.splice(newIndex + newIndexOffset, 0, this.routed[oldIndex]);
+      this.routed.splice(oldIndex + oldIndexOffset, 1);
+      LoadMap();
+    },
+  }
+
+
+  var CreateWaypoint = function(id, invoice_id, is_routed, name, address, latitude, longitude) {
+    this.id = id;
+    this.invoice_id = invoice_id;
+    this.is_routed = is_routed;
+    this.name = name;
+    this.address = address;
+    this.latitude = latitude;
+    this.longitude = longitude;
+  }
+
+  // var CreateWaypoint = function(invoiceId, routed, name, address, lat, lng) {
+  //   this.invoiceId = invoiceId;
+  //   this.name = name;
+  //   this.address = address;
+  //   this.lat = lat;
+  //   this.lng = lng;
+  //   this.routed = routed;
+  // }
+
+  function refreshSortable() {
+    $('#routeInfo').hide();
+    ClearMap();
+
+    var sortable = $("#sortable");
+    sortable.empty();  // clear sortable.
+    $.each(manager.routed, function(index, item) {
+      var li = $("<li>");
+
+      var info = $('<div>', {class:'waypoint-info'});
+      var number = $('<div>', {class:'waypoint-number'}).html(index+1);
+      info.append(number);
+
+      var details = $('<div>', {class:'waypoint-details'});
+      var name = $('<p>', {class:'name'}).html(item.name);
+      details.append(name);
+      var address = $('<div>', {class:'address'}).html(item.address);
+      details.append(address);
+      info.append(details);
+      li.append(info);
+      li.addClass("ui-state-default");
+      sortable.append(li);
+
+      // li.addClass("ui-state-default");
+      // li.text(index + " - "+ item.name + "<br/>" + item.address);
+      // sortable.append(li);
+    });
+  }
+
+  function ClearMap() {
+    map.cleanRoute();
+  }
+  function DrawMap() {
+    if(manager.routed.length < 1) {
+      return;
+    }
+    var wypts= [];
+    $.each(manager.routed, function(index, item){
+      //https://github.com/hpneo/gmaps/issues/46
+      wypts.push({
+        location: new google.maps.LatLng(item.latitude, item.longitude),
+        stopover:true,
+      });
+    });
+    map.drawRoute({
+        origin: [
+          manager.baseLat,
+          manager.baseLng
+        ],
+        destination: [
+          manager.baseLat,
+          manager.baseLng
+        ],
+        waypoints: wypts,
+        travelMode: 'driving',
+        strokeColor: '#131540',
+        strokeOpacity: 0.6,
+        strokeWeight: 6,
+        callback: function(e) {
+                var timeSeconds = 0;
+                var distanceMeters = 0;
+                for (var i = 0; i < e.legs.length; i++) {
+                    timeSeconds += e.legs[i].duration.value;  //seconds
+                    distanceMeters += e.legs[i].distance.value;  //meters.
+                }
+
+                var minutes = Math.round((timeSeconds/60)*100)/100;
+                var miles = Math.round((distanceMeters/1609.344) *100) /100;
+                console.log(timeSeconds + " seconds & " + distanceMeters + " meters.");
+                console.log(minutes + " minutes & " + miles + " miles.");
+
+                $('#stopLabel').html(wypts.length);
+                var timeString = (minutes > 60)  ? minutes/60 + "hr " + Math.ceil(minutes%60) +" min" : Math.ceil(minutes) + " min";
+                $('#minuteLabel').html(timeString);
+                var mileString = miles + " mile" +(miles > 1 ? "s" : "");
+                $('#mileLabel').html(mileString);
+
+                $('#routeInfo').show()
+            }
+    });
+  }
+  function LoadMap() {
+    refreshSortable();
+
+    map.addMarker({
+      lat: manager.baseLat,
+      lng: manager.baseLng,
+      title: "Home Base",
+      icon: 'http://chart.apis.google.com/chart?chst=d_map_xpin_icon&chld=pin_star|home|5588FE|FF0000',
+    });
+
+    // add markers to map.
+    $.each(manager.unRouted, function(index, item) {
+      map.addMarker({
+        lat: item.latitude,
+        lng: item.longitude,
+        title: item.name,
+        icon: 'https://www.google.com/mapfiles/marker.png',
+
+        click: function(e) {
+          console.log('You clicked ' + item.id);
+          if(item.is_routed) {
+            manager.UnRouteWaypoint(item.id);
+          } else {
+            manager.RouteWaypoint(item.id);
+          }
+        }
+      });  // end add marker
+    });  // end loop
+
+    $.each(manager.routed, function(index, item) {
+      map.addMarker({
+        lat: item.latitude,
+        lng: item.longitude,
+        title: item.name,
+        icon: 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld='+(index+1)+'|5588FE|000000',
+
+        click: function(e) {
+          console.log('You clicked ' + item.id);
+          if(item.is_routed) {
+            manager.UnRouteWaypoint(item.id);
+          } else {
+            manager.manager.RouteWaypoint(item.id);
+          }
+        }
+      });  // end add marker
+    });  // end loop
+  }
+
+
+  var manager;
+  var map;
+  var initLocation = {
+
+  };
+
+  // BEGIN LOADING_LOGIC (PULL THIS INTO SEPARATE LIBRARY)
+  var loadCount = 0;
+  function StartLoad(){
+    if(loadCount == 0) {
+      $("#loading").show();
+    }
+    loadCount++;
+  }
+  function EndLoad() {
+    loadCount--;
+    if(loadCount <= 0) {
+      $("#loading").hide();
+    }
+  }
+  // END LOADING_LOGIC
+
+  function CreateRoute() {
+    StartLoad();
+    var driver_id = $('#driverSelect').val();
+    var json = JSON.stringify({
+      route_id: {{route_id}},
+      driver_id: driver_id,
+      waypoints: manager.routed.map((a, index) => {
+        return {
+          id: a.id,
+          wp_order: index + 1,
+          // invoice_id: a.invoice_id,  // this will determine waypoint_type, cleaner_id
+          // address: a.address,
+          // latitude: a.latitude,
+          // longitude: a.longitude
+        }
+      }),
+    });
+    console.log(json);
+
+    $.ajax({
+      url: '/api/cleaner/route/update/',
+      method: 'POST',
+      data: {
+        csrfmiddlewaretoken: '{{csrf_token}}',
+        route: json,
+      },
+      success: function(data){
+        if(data["status"] == "success"){
+          console.log("successfully posted.");
+
+          window.location.href= '/cleaner/route/';
+        } else {
+          console.log(data);
+        }
+      },
+      complete: function() {
+        // EndLoad();
+      }
+    });
+  }
+
+
+  function init() {
+
+    var routeId = {{route_id}}
+    //load routed and unrouted
+    //ajax to get route, unrouted waypoints, and drivers.
+    StartLoad();
+    $.ajax({
+      url: '/api/cleaner/routeToEdit/'+routeId,
+      method: 'GET',
+      success: function(data){
+        console.log(data);
+
+
+        var routed = [];
+        var unrouted = [];
+        var drivers;
+
+        var routeDriverId = 0;
+        if(data.route != null) {
+          if (data.route.driver != null) {
+            routeDriverId = data.route.driver.id;
+          }
+        }
+        // setup routed waypoints.
+        if(data.route != null){
+
+          // sort based on specified order.
+          data.route.waypoints.sort(function(a, b) {
+            return a.waypoint_order - b.waypoint_order;
+          });
+
+          $.each(data.route.waypoints, function(index, item) {
+            var id = item.id;
+            var invoice_id = item.invoice.id;
+            var name = item.invoice.customer.name;
+            var address = item.address;
+            routed.push(new CreateWaypoint(id, invoice_id, true, name, address,item.latitude, item.longitude));
+          });
+        }
+
+        // setup unrouted waypoints.
+        $.each(data.unrouted, function(index, item) {
+          var id = item.id;
+          var invoice_id = item.invoice.id;
+          var name = item.invoice.customer.name;
+          var address = item.address;
+          unrouted.push(new CreateWaypoint(id, invoice_id, false, name, address, item.latitude, item.longitude));
+        });
+
+        // setup driver select options.
+        $('#driverSelect').empty()
+        $.each(data.drivers, function(index, item) {
+          var opt = $('<option>', {text: item.name, value:item.id});
+          if(item.id == routeDriverId) {
+            opt.val(item.id);
+          }
+          $('#driverSelect').append(opt);
+        });
+
+        // setup home base.
+        var baseLat = data.cleaner.latitude;
+        var baseLng = data.cleaner.longitude;
+        manager = new RouteManager(routed, unrouted,baseLat, baseLng);
+
+        map = new GMaps({
+          el: '#map',
+          lat: baseLat,
+          lng: baseLng
+        });
+
+        $( "#sortable" ).sortable({
+          placeholder: "ui-state-highlight",
+          revert: true,
+          start: function(ev, ui) {
+            ui.item.removeClass('ui-state-default').addClass('ui-state-hover');
+            ui.placeholder.height(ui.item.height());
+            ui.item.startPos = ui.item.index();
+          },
+          stop: function(ev, ui) {
+            console.log("sortable: move from " + ui.item.startPos + " to " + ui.item.index());
+            manager.MoveWaypoint(ui.item.startPos, ui.item.index());
+          }
+        });
+        $( "#sortable" ).disableSelection();
+        LoadMap();
+      },
+      complete: function() {
+        EndLoad();
+      }
+    });
+
+
+  }
+	$(function() {
+    init();
+
+    // var unRouted = [
+    //   new CreateWaypoint(1, false, 'Paul Kim', "123 fake st. gilbert az, 85234", 33.348126, -111.757127),
+    // 	new CreateWaypoint(2, false, 'Kevin Lee', "456 fake st. gilbert az, 85234", 33.345026, -111.753284),
+    // 	new CreateWaypoint(3, false, 'Scott Yun', "789 fake st. gilbert az, 85234", 33.341835, -111.754185),
+    //   new CreateWaypoint(4, false, 'Ordana Sonthipanya', "1011 fake st. gilbert az, 85234", 33.341822, -111.754539),
+    //   new CreateWaypoint(5, false, 'Mariko Kuhara', "1213 fake st. gilbert az, 85234", 33.341150, -111.751578),
+    //   new CreateWaypoint(6, false, 'Anthony Chi', "1415 fake st. gilbert az, 85234", 33.337950, -111.752715),
+    // ];
+
+    // init route manager.
+    //manager = new RouteManager([], unRouted);
+
+
+
+
+
+	});  // end DOM load
+
+  </script>
+{% endblock %}
