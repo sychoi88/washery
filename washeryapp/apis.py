@@ -310,7 +310,13 @@ def customer_get_latest_invoice(request):
         expires__gt = timezone.now())
 
     customer = access_token.user.customer
-    invoice = InvoiceSerializer(Invoice.objects.filter(customer = customer).last()).data
+
+
+    invoices = Invoice.objects.filter(customer = customer)
+    if invoices.count() > 0:
+        invoice = InvoiceSerializer(Invoice.objects.filter(customer = customer).last()).data
+    else:
+        invoice = None
 
     return JsonResponse({"invoice": invoice})
 
