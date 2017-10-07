@@ -24,7 +24,7 @@ class UserFormForEdit(forms.ModelForm):
 class CleanerForm(forms.ModelForm):
     class Meta:
         model = Cleaner
-        fields = ("name", "phone", "address", "logo")
+        fields = ("name", "phone", "address", "latitude", "longitude", "logo")
 
 class ItemForm(forms.ModelForm):
     class Meta:
