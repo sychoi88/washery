@@ -141,7 +141,6 @@ def cleaner_update_invoice_new(request):
 
     return JsonResponse({"status": "fail"})
 
-
 @csrf_exempt
 def cleaner_update_invoice(request):
     """
@@ -311,7 +310,6 @@ def customer_get_latest_invoice(request):
 
     customer = access_token.user.customer
 
-
     invoices = Invoice.objects.filter(customer = customer)
     if invoices.count() > 0:
         invoice = InvoiceSerializer(Invoice.objects.filter(customer = customer).last()).data
@@ -454,7 +452,8 @@ def cleaner_routeToEdit(request, route_id=0):
 def driver_get_ready_invoices(request):     # require access_token to authenticate.
     invoices = InvoiceSerializer(
         Invoice.objects.filter(status = Invoice.READY).order_by("-id"),
-        many = True
+        many = True,
+        context = {"request": request}
     ).data
 
     return JsonResponse({"invoices": invoices})
@@ -572,6 +571,38 @@ def driver_update_location(request):
         return JsonResponse({"status": "success"})
 
 # GET - params: access_token
+def driver_get_routes(request):
+    print("driver_get_routes++++++++++++++++++++++++++++++++++++++++")
+    access_token = AccessToken.objects.get(token = request.GET.get("access_token"),
+        expires__gt = timezone.now())
+    driver = access_token.user.driver
+
+    routeModels = Route.objects.filter(driver = driver)
+    if(routeModels.count() >0):
+        routes = RouteSerializer(
+            routeModels,
+            many = True
+        ).data
+    else:
+        routes = None
+
+    return JsonResponse({"routes": routes })
+
+
+# GET - params: access_token
+def driver_get_route(request, route_id):
+    print("driver_get_route++++++++++++++++++++++++++++++++++++++++")
+    access_token = AccessToken.objects.get(token = request.GET.get("access_token"),
+        expires__gt = timezone.now())
+    driver = access_token.user.driver
+
+    route = RouteSerializer(
+        Route.objects.get(driver = driver, id = route_id)
+    ).data
+
+    return JsonResponse({"route": route })
+
+# GET - params: access_token
 def driver_get_latest_route(request):
     # Get token
     access_token = AccessToken.objects.get(token = request.GET.get("access_token"),
@@ -636,3 +667,18 @@ def driver_start_route(request):
     route.save()
 
     return JsonResponse({"status": "success"})
+
+############
+# DRIVERs - WAYPOINTs
+############
+# Get - params: access_token
+def driver_get_waypoint(request, waypoint_id):
+    print("driver_get_waypoint++++++++++++++++++++++++++++++++++++++++")
+    access_token = AccessToken.objects.get(token = request.GET.get("access_token"),
+        expires__gt = timezone.now())
+    driver = access_token.user.driver
+
+    waypoint = WayPointSerializer(
+        WayPoint.objects.get(id = waypoint_id)
+    ).data
+    return JsonResponse({"waypoint": waypoint})

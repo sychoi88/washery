@@ -91,10 +91,17 @@ urlpatterns = [
     url(r'^api/driver/invoice/complete/$', apis.driver_complete_invoice),
     url(r'^api/driver/revenue/$', apis.driver_get_revenue),
     url(r'^api/driver/location/update/$', apis.driver_update_location),
+
     # APIs for DRIVER ROUTES
+    url(r'^api/driver/routes/$', apis.driver_get_routes),
+    url(r'^api/driver/route/(?P<route_id>\d+)/$', apis.driver_get_route),
+
     url(r'^api/driver/route/latest/$', apis.driver_get_latest_route),
     url(r'^api/driver/waypoint/complete/$', apis.driver_complete_waypoint),
     url(r'^api/driver/route/start/$', apis.driver_start_route),
+
+    # APIs for DRIVER WAYPOINTs
+    url(r'^api/driver/waypoint/(?P<waypoint_id>\d+)/$', apis.driver_get_waypoint),
 
 
 ] + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
