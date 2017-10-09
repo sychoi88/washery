@@ -90,55 +90,55 @@ def cleaner_invoice(request):
 
 
 @login_required(login_url='/cleaner/sign-in/')
-def cleaner_edit_invoice(request, invoice_id):
+def cleaner_edit_invoice(request, invoice_id=0):
 
     return render(request, 'cleaner/edit_invoice.html', {"invoice_id": invoice_id})
 
-
-@login_required(login_url='/cleaner/sign-in/')
-def cleaner_add_invoice(request):
-    invoice_form = CreateInvoiceForm(prefix="invoice")
-
-    InvoiceDetailFormSet = modelformset_factory(InvoiceDetail, fields=('item', 'quantity'),
-                                formset=BaseInvoiceDetailFormSet,
-                                can_delete = False, extra = 0, min_num=1)
-    invoiceDetail_formset = InvoiceDetailFormSet(prefix="line")
-
-    if request.method == "POST":
-        invoice_form = CreateInvoiceForm(request.POST, request.FILES, prefix="invoice")
-        invoiceDetail_formset = InvoiceDetailFormSet(request.POST, prefix="line")
-
-        #save form here.
-        if invoice_form.is_valid() and invoiceDetail_formset.is_valid():
-            try:
-                invoice = invoice_form.save(commit=False)
-
-                total = 0
-                for idet in invoiceDetail_formset:
-                    detail = idet.save(commit=False)
-                    detail.sub_total = detail.quantity * detail.item.price
-                    total += detail.sub_total
-
-                invoice.cleaner = request.user.cleaner
-                invoice.status = Invoice.CLEANING
-                invoice.total = total  # Set the calculated total.
-                invoice.save()
-
-                for idet in invoiceDetail_formset:
-                    detail = idet.save(commit=False)
-                    detail.invoice = invoice
-                    detail.save()
-
-
-            except Exception as e:
-                print("################# ERROR SAVING TO DB: " + str(e))
-
-            return redirect(cleaner_home)
-
-    return render(request, 'cleaner/add_invoice.html', {
-        "invoice_form": invoice_form,
-        "invoiceDetail_formset": invoiceDetail_formset,
-    })
+#
+# @login_required(login_url='/cleaner/sign-in/')
+# def cleaner_add_invoice(request):
+#     invoice_form = CreateInvoiceForm(prefix="invoice")
+#
+#     InvoiceDetailFormSet = modelformset_factory(InvoiceDetail, fields=('item', 'quantity'),
+#                                 formset=BaseInvoiceDetailFormSet,
+#                                 can_delete = False, extra = 0, min_num=1)
+#     invoiceDetail_formset = InvoiceDetailFormSet(prefix="line")
+#
+#     if request.method == "POST":
+#         invoice_form = CreateInvoiceForm(request.POST, request.FILES, prefix="invoice")
+#         invoiceDetail_formset = InvoiceDetailFormSet(request.POST, prefix="line")
+#
+#         #save form here.
+#         if invoice_form.is_valid() and invoiceDetail_formset.is_valid():
+#             try:
+#                 invoice = invoice_form.save(commit=False)
+#
+#                 total = 0
+#                 for idet in invoiceDetail_formset:
+#                     detail = idet.save(commit=False)
+#                     detail.sub_total = detail.quantity * detail.item.price
+#                     total += detail.sub_total
+#
+#                 invoice.cleaner = request.user.cleaner
+#                 invoice.status = Invoice.CLEANING
+#                 invoice.total = total  # Set the calculated total.
+#                 invoice.save()
+#
+#                 for idet in invoiceDetail_formset:
+#                     detail = idet.save(commit=False)
+#                     detail.invoice = invoice
+#                     detail.save()
+#
+#
+#             except Exception as e:
+#                 print("################# ERROR SAVING TO DB: " + str(e))
+#
+#             return redirect(cleaner_home)
+#
+#     return render(request, 'cleaner/add_invoice.html', {
+#         "invoice_form": invoice_form,
+#         "invoiceDetail_formset": invoiceDetail_formset,
+#     })
 
 @login_required(login_url='/cleaner/sign-in/')
 def cleaner_route(request):

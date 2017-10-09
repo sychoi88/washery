@@ -93,31 +93,33 @@ def customer_request_invoice(request):
 
 # POST - Update invoice with details.
 def cleaner_update_invoice_new(request):
+    print("cleaner_update_invoice_new++++++++++++++++++++++++++++++++++++")
 
     if request.method == "POST":
-
         jsonInvoice = json.loads(request.POST.get('invoice'))
 
         invoice = Invoice.objects.get(cleaner=request.user.cleaner, id = jsonInvoice["invoice_id"])
+        print("step 1/4")
 
         if not invoice.status == Invoice.PICKEDUP:
             return JsonResponse({"status": "failed", "error": "Invoice cannot be updated."})
 
         # Get Invoice Details
         invoice_details = json.loads(jsonInvoice["invoice_details"])
-
         invoice_total = 0
         invoice_pieces = 0
         for item in invoice_details:
             invoice_total += Item.objects.get(id=item["item_id"]).price * item["quantity"]
             invoice_pieces += Item.objects.get(id=item["item_id"]).piece_count * item["quantity"]
 
+        print("step 2/4")
         if len(invoice_details) > 0:
             # Step 1 - Update Invoice (status, total, pieces)
             invoice.status = Invoice.CLEANING
             invoice.total = invoice_total
             invoice.pieces = invoice_pieces
 
+            print("step 3/4")
             # Step 2 - Create Invoice Details
             for item in invoice_details:
                 InvoiceDetail.objects.create(
@@ -129,6 +131,7 @@ def cleaner_update_invoice_new(request):
                 )
             invoice.save()
 
+            print("step 4/4")
             return JsonResponse({"status": "success"})
         #
         # print("CHECK THIS OUT:##################################")
@@ -370,6 +373,30 @@ def cleaner_get_items(request):
 
     return JsonResponse({"pos_items": pos_items})
 
+def cleaner_invoiceToEdit(request, invoice_id):
+    print("cleaner_get_invoiceToEdit++++++++++++++++++++++++++++++++++++")
+
+    cleaner = CleanerSerializer(
+            request.user.cleaner,
+            context = {"request": request}
+        ).data
+
+    try:
+        invoiceObj = Invoice.objects.get(cleaner = request.user.cleaner, id = invoice_id)
+        invoice = InvoiceSerializer(
+            invoiceObj
+        ).data
+    except Invoice.DoesNotExist:
+        invoice = None
+
+    items = ItemSerializer(
+        Item.objects.filter(cleaner = request.user.cleaner).order_by("-id"),
+        many=True,
+        context = {"request": request}
+    ).data
+
+    return JsonResponse({"cleaner": cleaner, "invoice": invoice, "items": items })
+
 def cleaner_update_route(request):
     if request.method == "POST":
 
@@ -411,14 +438,13 @@ def cleaner_update_route(request):
 
     return JsonResponse({"status": "fail", "error": "message here."})
 
-def cleaner_routeToEdit(request, route_id=0):
+def cleaner_routeToEdit(request, route_id):
 
     print(route_id)
     print("++++++++++++++++++++++++++++++++++++")
     cleaner = CleanerSerializer(
             request.user.cleaner,
             context = {"request": request}
-
         ).data
 
     try:
@@ -587,7 +613,6 @@ def driver_get_routes(request):
         routes = None
 
     return JsonResponse({"routes": routes })
-
 
 # GET - params: access_token
 def driver_get_route(request, route_id):

@@ -8,7 +8,7 @@
   </div>
   <div class="panel-body">
     <div class="text-right">
-      <a href="{%  url 'cleaner-add-invoice' %}" class="btn btn-pink">Add Invoice</a>
+      <a href="{%  url 'cleaner-add-invoice' %}" class="btn btn-pink">Create Invoice</a>
       <br/>
       <br/>
     </div>
@@ -19,7 +19,6 @@
           <th>Id</th>
           <th>Invoice Details</th>
           <th>Customer</th>
-          <!-- <th>Driver</th> -->
           <th>Total</th>
           <th>Status</th>
           <th>Action</th>
@@ -28,10 +27,11 @@
       <tbody>
         {% for invoice in invoices %}
           <tr>
-            <td scope="row">{{ invoice.id }}</td>
+            <td scope="row">
+              <a href="{% url 'cleaner-edit-invoice' invoice.id %}">{{ invoice.id }}</a></td>
+            </td>
             <td>
               {% for detail in invoice.invoice_details.all %}
-
                 {{ detail.item.name }} ({{ detail.quantity }} x ${{  detail.item.price }}) = ${{ detail.sub_total }}<br/>
               {% endfor %}
             </td>

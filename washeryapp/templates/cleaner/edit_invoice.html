@@ -30,6 +30,10 @@
                       <!-- <div class="col-md-3 col-md-push-1"><span>Total Invoices - </span><span id="notification" class="badge">3</span></div> -->
                       <div class="col-md-3 col-md-push-1"><span class="panel-title">Invoice Id: {{invoice_id}}</span></div>
                   </div>
+                  <div class="row">
+                      <div class="col-md-4"><span class="panel-title" id="statusLabel">Status: ----</span></div>
+                      <div class="col-md-4"><span id="scheduleLabel">PickUp: ----<br/>----<br/>DropOff:----<br/>----</span></div>
+                  </div>
               </div>
               <div id="InvoiceSection" class="panel-body" style="max-height:320px; overflow:auto;">
                   <div id="emptyInvoiceMsg" class='text-warning'>Nothing ordered yet!</div>
@@ -43,14 +47,14 @@
               </div>
               <div class="panel-footer" >
                   <div>
-                      <span class="btn btn-default btn-marginTop" onClick="ClearInvoice();">Clear</span>
-                      <button class="btn btn-danger btn-marginTop" id="saveBtn" onClick="SaveInvoice();">Save</button>
+                      <button class="btn btn-default btn-marginTop invoice_editable" onClick="ClearInvoice();">Clear</button>
+                      <button class="btn btn-danger btn-marginTop invoice_editable" id="saveBtn" onClick="SaveInvoice();">Save</button>
                   </div>
               </div>
           </div>
       </div>
 
-      <div class="col-md-6">
+      <div class="col-md-6" id="pos_menu">
           <div class="panel panel-primary">
               <divf class="panel-body">
                   <ul id="myTab" class="nav nav-tabs" role="tablist">
@@ -245,27 +249,57 @@
     }
 
     function init(){
-      initItems();  // load item list.
       initInvoice();
     }
 
-    function initItems() {
-      $(document).ready(function(){
-          $.ajax({
-            url: '/api/cleaner/items/',
-            method: 'GET',
-            success: function(data){
-              $.each(data["pos_items"], function(index, item) {
-                posItems.push(new createItem(item.id, item.name, item.price, item.piece_count));
-              });
-              updateItemMenuUI();
-            }
-          });
-      });
+    function formatDate(date) {
+      var utc = date.toUTCString() // 'ddd, DD MMM YYYY HH:mm:ss GMT'
+      console.log(utc);
+      console.log(utc.slice(0, 4))
+      console.log(utc.slice(8, 11))
+      console.log(utc.slice(5, 8))
+      console.log(utc.slice(12, 15))
+
+      return "("+utc.slice(0, 3)+") " + utc.slice(8, 11) + ", " + utc.slice(5, 8) +" " + utc.slice(12, 16)  // '(Fri) Dec, 01 2017'
     }
+
     function initInvoice() {
       // get from python.  load invoice info from server here.
-      console.log('initInvoice() not implemented');
+      // console.log('initInvoice() not implemented');
+      $.ajax({
+        url: '/api/cleaner/invoiceToEdit/' + {{invoice_id}},
+        method: 'GET',
+        success: function(data){
+          console.log(data);
+
+          // load pos_items.
+          $.each(data["items"], function(index, item) {
+            posItems.push(new createItem(item.id, item.name, item.price, item.piece_count));
+          });
+          updateItemMenuUI();
+
+          // load invoice menu.
+          if(data.invoice != null) {
+            $("#statusLabel").text("Status: " + data.invoice.status);
+            $('#scheduleLabel').html("PickUp: <br/>"+formatDate(new Date(data.invoice.pickup_date))+" "+data.invoice.pickup_period+"<br/>DropOff:<br/>"+formatDate(new Date(data.invoice.dropoff_date))+" "+data.invoice.dropoff_period);
+            invoice.invoice_id = data.invoice.id;
+
+            $.each(data.invoice.invoice_details, function(index, invoice_detail){
+              addToOrder(invoice_detail.item.id, invoice_detail.quantity);
+            });
+
+            if(data.invoice.status != "Picked Up" && data.invoice.status != "Cleaning"){
+              // hide pos_item menu.
+              $('#pos_menu').hide();
+              // disable edit buttons
+              $('.invoice_editable').prop('disabled', true);
+            }
+          }
+        }
+      });
+
+
+
     }
 
     function addToOrder(itemId, quantity) {
@@ -302,7 +336,7 @@
             console.log("redirect to invoice view.");
             window.location.href= '/cleaner/invoice/';
           } else {
-            console.log("fail");
+            console.log(data);
           }
         }
       });
@@ -344,15 +378,15 @@
         divRow.append(subtotalLabel);
 
         var buttons = $('<div/>', {'class': 'col-md-2 col-md-push-2'});
-        var incrementBtn = $('<button/>', {'class': 'btn btn-success btn-xs', 'onClick': 'addToOrder('+ lineItem.itemId +',1)'})
+        var incrementBtn = $('<button/>', {'class': 'btn btn-success btn-xs invoice_editable', 'onClick': 'addToOrder('+ lineItem.itemId +',1)'})
                 .append($('<span/>', {'class': 'glyphicon glyphicon-plus'}));
-        var decrementBtn = $('<button/>', {'class': 'btn btn-warning btn-xs', 'onClick': 'removeOneEntity('+lineItem.itemId+')'})
+        var decrementBtn = $('<button/>', {'class': 'btn btn-warning btn-xs invoice_editable', 'onClick': 'removeOneEntity('+lineItem.itemId+')'})
                 .append($('<span/>', {'class': 'glyphicon glyphicon-minus'}));
         buttons.append(incrementBtn).append(decrementBtn);
         divRow.append(buttons);
 
         buttons = $('<div/>', {'class': 'col-md-1 col-md-push-2'});
-        var trashBtn = $('<button/>', {'class': 'btn btn-danger btn-xs', 'onClick': 'removeItem('+lineItem.itemId+')'})
+        var trashBtn = $('<button/>', {'class': 'btn btn-danger btn-xs invoice_editable', 'onClick': 'removeItem('+lineItem.itemId+')'})
                 .append($('<span/>', {'class': 'glyphicon glyphicon-trash'}));
         buttons.append(trashBtn);
         divRow.append(buttons);
@@ -367,7 +401,9 @@
     function updateItemMenuUI() {
       var menu = $("#posItem");
       $.each(posItems, function(index, value) {
-        var b = $('<button class="btn btn-primary btn-pos btn-marginTop" onClick="addToOrder(' + value.id + ', 1)">'+value.name+'</button>');
+        var b = $('<button class="btn btn-primary btn-pos btn-marginTop" onClick="addToOrder(' + value.id + ', 1)"></button>');
+        var piece = $('<span/>', {}).html(value.name + '<br/>' + value.piece_count + ' pcs<br/>');
+        b.append(piece);
         menu.append(b);
       });
       return;
